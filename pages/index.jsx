@@ -1,10 +1,21 @@
 import { useState, useEffect } from 'react'
+import { ethers } from 'ethers'
+import abi from '../utils/wavePortal.json'
 
 import Head from 'next/head'
 import { BsEmojiSmile } from 'react-icons/bs'
 
 export default function Home() {
   const [currentAccount, setCurrentAccount] = useState('')
+  const [totalWaves, setTotalWaves] = useState(0)
+  const [isMining, setIsMining] = useState(false)
+
+  const contractAddress = '0x36c359E4D0e49Be9aF78f76B121fc9Ea0b999f02'
+  const contractABI = abi.abi
+
+  useEffect(() => {
+    checkIfWalletIsConnected()
+  }, [])
 
   const checkIfWalletIsConnected = async () => {
     const { ethereum } = window
@@ -51,9 +62,42 @@ export default function Home() {
     }
   }
 
-  useEffect(() => {
-    checkIfWalletIsConnected()
-  }, [])
+  const wave = async () => {
+    try {
+      const { ethereum } = window
+
+      if (ethereum) {
+        const provider = new ethers.providers.Web3Provider(ethereum)
+        const signer = provider.getSigner()
+        const wavePortalContract = new ethers.Contract(
+          contractAddress,
+          contractABI,
+          signer
+        )
+
+        let count = await wavePortalContract.getTotalWaves()
+        console.log('Retrieved total wave count...', parseInt(count))
+        setTotalWaves(parseInt(count))
+
+        //Executing a wave transaction
+        const waveTxn = await wavePortalContract.wave()
+        console.log('Mining...', waveTxn.hash)
+        setIsMining(true)
+
+        await waveTxn.wait()
+        console.log('Mined ---', waveTxn.hash)
+        setIsMining(false)
+
+        count = await wavePortalContract.getTotalWaves()
+        console.log('Retrieved total waves: ', parseInt(count))
+        setTotalWaves(parseInt(count))
+      } else {
+        console.log('Ethereum object does not exist')
+      }
+    } catch (error) {
+      console.log(error)
+    }
+  }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen py-2 bg-gray-800 text-gray-50">
@@ -74,12 +118,18 @@ export default function Home() {
           </span>
         </h1>
         <p>Welcome to my wave portal</p>
+        <p className="mt-4 text-yellow-600">
+          Total Waves: <span className="text-white">{totalWaves}</span>
+        </p>
         <div className="mt-4">
           <button
-            className="border-2 px-4 py-1 mr-4 rounded-md hover:bg-gray-50 hover:text-gray-800 transition duration-300"
-            onClick={null}
+            className="border-2 px-4 py-1 mr-4 rounded-md 
+            hover:bg-gray-50 hover:text-gray-800 transition duration-300 
+            disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-wait"
+            onClick={wave}
+            disabled={isMining}
           >
-            Wave at me
+            {isMining ? 'Sending Wave...' : 'Wave at me'}
           </button>
 
           {!currentAccount && (
