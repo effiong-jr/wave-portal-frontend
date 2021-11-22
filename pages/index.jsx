@@ -12,11 +12,47 @@ export default function Home() {
   const [isMining, setIsMining] = useState(false)
   const [userMessage, setUserMessage] = useState('')
 
-  const contractAddress = '0xd338eB42EfEc237878525956e868406F0E88c322'
+  const contractAddress = '0xD4fDab09BF801A52f12B93D333fD9dB7F19d3E76'
   const contractABI = abi.abi
 
   useEffect(() => {
     checkIfWalletIsConnected()
+    checkIfWalletIsConnected() && getAllWaves()
+  }, [])
+
+  useEffect(() => {
+    let wavePortalContract
+
+    const onNewWave = (from, timestamp, message) => {
+      console.log('New wave', from, timestamp, message)
+
+      setAllWaves((prevState) => [
+        ...prevState,
+        {
+          address: from,
+          timestamp: new Date(timestamp * 1000),
+          message,
+        },
+      ])
+    }
+
+    if (window.ethereum) {
+      const provider = new ethers.providers.Web3Provider(window.ethereum)
+      const signer = provider.getSigner()
+
+      wavePortalContract = new ethers.Contract(
+        contractAddress,
+        contractABI,
+        signer
+      )
+      wavePortalContract.on('NewWave', onNewWave)
+    }
+
+    return () => {
+      if (wavePortalContract) {
+        wavePortalContract.off('NewWave', onNewWave)
+      }
+    }
   }, [])
 
   const checkIfWalletIsConnected = async () => {
@@ -33,7 +69,6 @@ export default function Home() {
 
     try {
       if (accounts.length !== 0) {
-        getAllWaves()
         const account = accounts[0]
         console.log('Found an authorized account: ', account)
         setCurrentAccount(account)
@@ -84,7 +119,9 @@ export default function Home() {
         getAllWaves()
 
         //Executing a wave transaction
-        const waveTxn = await wavePortalContract.wave(userMessage)
+        const waveTxn = await wavePortalContract.wave(userMessage, {
+          gasLimit: 300000,
+        })
         console.log('Mining...', waveTxn.hash)
         setIsMining(true)
 
