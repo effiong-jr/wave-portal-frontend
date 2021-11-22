@@ -128,6 +128,7 @@ export default function Home() {
         await waveTxn.wait()
         console.log('Mined ---', waveTxn.hash)
         setIsMining(false)
+        setUserMessage('')
 
         count = await wavePortalContract.getTotalWaves()
         console.log('Retrieved total waves: ', parseInt(count))
@@ -196,7 +197,7 @@ export default function Home() {
             <BsEmojiSmile className="text-yellow-600 inline-block ml-2" />
           </span>
         </h1>
-        <p>Welcome to my wave portal</p>
+        <p>Send a &#128075; and stand a chance to win some ETH</p>
         <p className="mt-4 text-yellow-600">
           Total Waves: <span className="text-white">{totalWaves}</span>
         </p>
@@ -233,22 +234,24 @@ export default function Home() {
         {/* Display all Waves */}
         <div className="mt-7">
           <h4 className="font-semibold">All my waves...</h4>
-          {allWaves.map((wave) => (
-            <div key={wave.timestamp} className="mt-5">
-              <h2 className="font-semibold text-yellow-600 text-xl">
-                {wave.message}
-              </h2>
-              <div className="text-xs">
-                <p>
-                  <span className="text-gray-400">From:</span> {wave.address}
-                </p>
-                <p>
-                  <span className="text-gray-400">Time:</span>{' '}
-                  {wave.timestamp.toUTCString()}
-                </p>
+          {allWaves
+            .map((wave) => (
+              <div key={wave.timestamp} className="mt-5">
+                <h2 className="font-semibold text-yellow-600 text-xl">
+                  {wave.message}
+                </h2>
+                <div className="text-xs">
+                  <p>
+                    <span className="text-gray-400">From:</span> {wave.address}
+                  </p>
+                  <p>
+                    <span className="text-gray-400">Time:</span>{' '}
+                    {wave.timestamp.toUTCString()}
+                  </p>
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+            .reverse()}
         </div>
       </main>
     </div>
