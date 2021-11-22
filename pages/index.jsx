@@ -8,9 +8,11 @@ import { BsEmojiSmile } from 'react-icons/bs'
 export default function Home() {
   const [currentAccount, setCurrentAccount] = useState('')
   const [totalWaves, setTotalWaves] = useState(0)
+  const [allWaves, setAllWaves] = useState([])
   const [isMining, setIsMining] = useState(false)
+  const [userMessage, setUserMessage] = useState('')
 
-  const contractAddress = '0x36c359E4D0e49Be9aF78f76B121fc9Ea0b999f02'
+  const contractAddress = '0xd338eB42EfEc237878525956e868406F0E88c322'
   const contractABI = abi.abi
 
   useEffect(() => {
@@ -31,6 +33,7 @@ export default function Home() {
 
     try {
       if (accounts.length !== 0) {
+        getAllWaves()
         const account = accounts[0]
         console.log('Found an authorized account: ', account)
         setCurrentAccount(account)
@@ -78,9 +81,10 @@ export default function Home() {
         let count = await wavePortalContract.getTotalWaves()
         console.log('Retrieved total wave count...', parseInt(count))
         setTotalWaves(parseInt(count))
+        getAllWaves()
 
         //Executing a wave transaction
-        const waveTxn = await wavePortalContract.wave()
+        const waveTxn = await wavePortalContract.wave(userMessage)
         console.log('Mining...', waveTxn.hash)
         setIsMining(true)
 
@@ -93,6 +97,44 @@ export default function Home() {
         setTotalWaves(parseInt(count))
       } else {
         console.log('Ethereum object does not exist')
+      }
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  const getAllWaves = async () => {
+    try {
+      const { ethereum } = window
+
+      if (ethereum) {
+        const provider = new ethers.providers.Web3Provider(ethereum)
+        const signer = provider.getSigner()
+
+        const wavePortalContract = new ethers.Contract(
+          contractAddress,
+          contractABI,
+          signer
+        )
+
+        const waves = await wavePortalContract.getAllWaves()
+        const totalWaves = await wavePortalContract.getTotalWaves()
+
+        setTotalWaves(parseInt(totalWaves))
+
+        let wavesCleaned = []
+
+        waves.forEach((wave) => {
+          wavesCleaned.push({
+            address: wave.waver,
+            message: wave.message,
+            timestamp: new Date(wave.timestamp * 1000),
+          })
+        })
+
+        setAllWaves(wavesCleaned)
+      } else {
+        console.log('Ethereum object not found')
       }
     } catch (error) {
       console.log(error)
@@ -122,12 +164,21 @@ export default function Home() {
           Total Waves: <span className="text-white">{totalWaves}</span>
         </p>
         <div className="mt-4">
+          <div>
+            <input
+              type="text"
+              value={userMessage}
+              onChange={(e) => setUserMessage(e.target.value)}
+              placeholder="Type your message here..."
+              className="mb-4 h-10 w-96 rounded-md px-2 text-gray-800 outline-none"
+            />
+          </div>
           <button
             className="border-2 px-4 py-1 mr-4 rounded-md 
             hover:bg-gray-50 hover:text-gray-800 transition duration-300 
-            disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-wait"
+            disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed"
             onClick={wave}
-            disabled={isMining}
+            disabled={isMining || userMessage.length === 0}
           >
             {isMining ? 'Sending Wave...' : 'Wave at me'}
           </button>
@@ -140,6 +191,27 @@ export default function Home() {
               Connect wallet
             </button>
           )}
+        </div>
+
+        {/* Display all Waves */}
+        <div className="mt-7">
+          <h4 className="font-semibold">All my waves...</h4>
+          {allWaves.map((wave) => (
+            <div key={wave.timestamp} className="mt-5">
+              <h2 className="font-semibold text-yellow-600 text-xl">
+                {wave.message}
+              </h2>
+              <div className="text-xs">
+                <p>
+                  <span className="text-gray-400">From:</span> {wave.address}
+                </p>
+                <p>
+                  <span className="text-gray-400">Time:</span>{' '}
+                  {wave.timestamp.toUTCString()}
+                </p>
+              </div>
+            </div>
+          ))}
         </div>
       </main>
     </div>
