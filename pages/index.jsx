@@ -198,6 +198,7 @@ export default function Home() {
           </span>
         </h1>
         <p>Send a &#128075; and stand a chance to win some ETH</p>
+        <small>...connect to the Rinkeby test network</small>
         <p className="mt-4 text-yellow-600">
           Total Waves: <span className="text-white">{totalWaves}</span>
         </p>
@@ -208,7 +209,7 @@ export default function Home() {
               value={userMessage}
               onChange={(e) => setUserMessage(e.target.value)}
               placeholder="Type your message here..."
-              className="mb-4 h-10 w-96 rounded-md px-2 text-gray-800 outline-none"
+              className="mb-4 h-10 w-80 max-w-full min-w rounded-md px-2 text-gray-800 outline-none"
             />
           </div>
           <button
